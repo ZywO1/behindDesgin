@@ -64,15 +64,25 @@ exports.getReport = (req, res) => {
 //获取所有用户
 exports.getUserList = (req, res) => {
     const searchInfo = req.body
-    let { identify, username, name, className } = searchInfo
+    let { identify, username, name, className, currentPage, pageSize } = searchInfo
     username = username || ""
     name = name || ""
-    className=className|| ""
-    let sql = `select id,name,username,class,identify from userlist where identify=${identify} and username like '%${username}%' and name like '%${name}%' and class like '%${className}%' limit 10`
-    db.query(sql, (err, results) => {
+    className = className || ""
+    const sqlStr = `select count(*) as total from userlist where identify=${identify} and username like '%${username}%' and name like '%${name}%' and class like '%${className}%'`
+    let total
+    db.query(sqlStr, (err, results) => {
         if (err) {
             return res.send({ status: 0, message: err.message })
         }
-        return res.send({ status: 1, message: '获取信息成功', data: results })
+        total = results
+        let sql = `select id,name,username,class,identify from userlist where identify=${identify} and username like '%${username}%' and name like '%${name}%' and class like '%${className}%' limit ${pageSize} offset ${(currentPage - 1) * pageSize}`
+        db.query(sql, (err, results) => {
+            if (err) {
+                return res.send({ status: 0, message: err.message })
+            }
+            return res.send({ status: 1, message: '获取信息成功', data: { total: total[0].total, data: results } })
+        })
     })
+
+
 }
